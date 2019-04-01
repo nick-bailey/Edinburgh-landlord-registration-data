@@ -1,0 +1,8 @@
+"0","knitr::opts_chunk$set(echo = TRUE)"
+"0","# install packages - first time only"
+"0","# packs <- c(""tidyverse"", ""dplyr"", ""readxl"")"
+"0","# install.packages(packs)"
+"0","# load libraries"
+"0","library(dplyr)"
+"0","library(tidyverse)"
+"0","library(readxl)"

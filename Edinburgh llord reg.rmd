@@ -1,7 +1,7 @@
 ---
-title: "Edinburgh llord reg"
-author: "nb"
-date: "29 March 2019"
+title: "Data note: Edinburgh landlord register data analysis"
+author: "Mark Livingston and Nick Bailey"
+date: "April 2019"
 output: html_document
 ---
 
@@ -17,20 +17,22 @@ library(dplyr)
 library(tidyverse)
 library(readxl)
 
-
-
-
 ```
 
-# Landlord register - City of Edinburgh 
+# Introduction
+
+Data were obtained from City of Edinburgh Council's register of private landlords. Data were obtained under a Freedom of Information (FoI) request in December 2017. (The request was made on 07/09/2017 - request number 16177). These data provide the number of listed properties within each unit postcode in the city at that time, i.e. they are an aggregated, anonymised extract from the database. In this note, we explore how these data can be used to provide a picture of private renting in the city.
 
 
-## FOI dataset
-Data were obtained from City of Edinburgh Council under a Freedom of Information (FoI) request (GIVE DETAILS). These data provide the number of listed properties within each unit postcode in the city at xxx. All the postcodes begin with "EH" as expected. 
+# Other data on the PRS in Edinburgh
 
-One has 9 characters rather than the expect 7 or 8 but this appears to be a due to an additional space as is easily corrected. However, it is surprising that the system does not seem to check and prevent invalid postcodes from being entered. 
+At the 2011 Census, there where 224,240 households in Edinburgh, of which 49,980 (22.3%) were in the private rented sector(PRS). We can estimate changes since then using the Scottish Survey Core Questions (SSCQ) for 2012-17. There has been a slight rise in the population of Edinburgh. In 2016, there were an estimated 232,900 households - an increase of 3.9% from 2011. The number of households in private renting rose to a peak of nearly 70,000 in 2014 but fell in subsequent years to 63,920 in 2016 (27.4%). 
 
-```{r get FOI data}
+[Mark - can we update to 2017? number and % PRS in 2012 (assuming 2011 not available) and number/% in 2017]
+
+
+#FOI dataset
+```{r get FOI data, include=FALSE}
 # open csv file from FoI request
 df_foi <- as_tibble(read_excel("data/16177 Response Data.xlsx"))
 
@@ -64,15 +66,20 @@ head(df_foi)
 
 ```
 
-In total, there are `r nrow(df_foi)` postcodes with registered properties and a total of `r sum(df_foi$NumberOfProperties)`. That represents an average of `r sum(df_foi$NumberOfProperties)/nrows(df_foi)' properties per postcode. 
+Data were provided as a .csv file, listing each unit postcode containing any registered properties and the number of registered properties. It should be noted that, where a property is owned by two or more individuals, each is required to register separately. In this dataset, duplicate listings for the same property have been combined. 
+
+Various checks were carried out on the postcodes. All begin with "EH" as expected. All but one has the expected 7 or 8 characters but one had 9. This is due to an additional space so is easily corrected. However, it is surprising that the system does not seem to check and prevent an obviously invalid postcode from being entered. 
+
+In total, there are `r nrow(df_foi)` postcodes with registered properties and they contain a total of `r sum(df_foi$NumberOfProperties)`. That represents an average of `r sum(df_foi$NumberOfProperties)/nrows(df_foi)` properties per postcode. 
+
+The number of registered properties is `r 100 * sum(df_foi$NumberOfProperties)/63920`% of the estimated total for Edinburgh (using the SSCQ figure from 2016). At best, there appear to be `r 100 - (100 * sum(df_foi$NumberOfProperties)/63920)`% of properties not listed (around `r 63920 - sum(df_foi$NumberOfProperties)` properties). That figure is almost certainly an underestimate since properties can be listed by not let. 
 
 
+# Comparison with Census data at Datazone level
 
-## Postcode lookup file
-We read in the postcode to higher area lookup file, cut this down to "EH" postcodes and to the 11 variables we are interested in. 
+The great advantage of the landlord register data is that it provides detail down to the small area level. Here we aggregate data from unit postcodes to Datazones, and then use these to compare with Census data for the same units. 
 
-
-```{r get pcode lookup}
+```{r get pcode lookup, include=FALSE}
 
 # open postcode directory - gives some errors which we ignore for now
 df_pcode <- read_csv(
@@ -93,7 +100,6 @@ df_pcode <- read_csv(
 )
 # head(df_pcode)
 
-
 # one cut down of pcodes to those starting EH and only the vars we need
 df_pcode2 <- subset(df_pcode, str_sub(pc7, 1, 2) == "EH",
                    select = c(pc7, pc8, DataZone2011, LAU_Level1_2011
@@ -113,17 +119,6 @@ df_dz_Edin <- df_pcode3 %>%
 # extract as list
 dz_Edin <- (df_dz_Edin$DataZone2011)
 
-```
-
-There are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011. 
-
-
-## Aggregate FoI data to Datazone
-We use the postcode lookup file to attach 2011 Datazone identifiers to the FOI data, along with information on the population of the postcode sector. 
-
-
-```{r aggregate to DZ}
-
 # left-join data from df_pcode to df_foi
 df_foi <- df_foi %>%
   left_join(df_pcode2, by = "pc8")
@@ -137,18 +132,6 @@ sum(is.na(df_foi$pc7))
 nrow(df_foi)
 colSums(!is.na(df_foi))
 
-```
-
-Number of cases: `r nrow(df_foi)`
-Pcode lookup failed: `r sum(is.na(df_foi$pc7))`
-
-
-# 
-
-
-
-```{r FOI data by DZ}
-
 # aggregating data to DZ level, summing number of registered props
 df_foi_dz <- df_foi %>%
   group_by(DataZone2011) %>%
@@ -157,12 +140,15 @@ df_foi_dz <- df_foi %>%
     )
 
 ```
+To aggregate unit postcodes to Datazones, we use a lookup file. In this process, the lookup failed in `r sum(is.na(df_foi$pc7))` cases - a very small fraction. 
+
+There are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011 and `r nrow(df_foi_dz)` of these have registered landlords in 2017. 
 
 
 ## Census data on Datazones
 
 
-```{r census data for DZs}
+```{r census data for DZs, include=FALSE}
 
 # Open file with tenure composition for DZs in 2011
 df_census <- as_tibble(read_csv("data/tenure DZ2011.csv"))
@@ -182,7 +168,7 @@ colnames(df_census)[1] <- "DataZone2011"
 
 Now we merge tenure and landlord register data on to the Edinburgh Datazones file. 
 
-```{r xx}
+```{r xx, include=FALSE}
 
 df_dz_Edin <- df_dz_Edin %>%
   left_join(df_census, by = "DataZone2011")
@@ -202,7 +188,7 @@ df_dz_Edin$NumberOfProperties[
 ```
 
 
-
+A scatterplot shows the relationship between the number of properties in the PRS according to the Census 2011 and the number of registered properties in 2017. 
 
 ```{r graphs}
 # make text for correlation
@@ -218,23 +204,8 @@ ggplot(data = df_dz_Edin,
   ggtitle("Registered properties vs PRS households - Edinburgh") +
   xlab("PRS households in 2011 (Census)") +
   ylab("No. of registered properties in 201x") +
+  geom_abline(slope=1)
   geom_text(x = 25, y = 450,
             label = corr_text)
 
-
-
 ```
-
-
-
-```{r xx1}
-
-```
-
-
-
-```{r xx2}
-
-```
-
-
