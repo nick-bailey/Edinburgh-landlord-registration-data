@@ -1,0 +1,240 @@
+---
+title: "Edinburgh llord reg"
+author: "nb"
+date: "29 March 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# install packages - first time only
+# packs <- c("tidyverse", "dplyr", "readxl")
+# install.packages(packs)
+
+# load libraries
+library(dplyr)
+library(tidyverse)
+library(readxl)
+
+
+
+
+```
+
+# Landlord register - City of Edinburgh 
+
+
+## FOI dataset
+Data were obtained from City of Edinburgh Council under a Freedom of Information (FoI) request (GIVE DETAILS). These data provide the number of listed properties within each unit postcode in the city at xxx. All the postcodes begin with "EH" as expected. 
+
+One has 9 characters rather than the expect 7 or 8 but this appears to be a due to an additional space as is easily corrected. However, it is surprising that the system does not seem to check and prevent invalid postcodes from being entered. 
+
+```{r get FOI data}
+# open csv file from FoI request
+df_foi <- as_tibble(read_excel("data/16177 Response Data.xlsx"))
+
+# rename cols to remove spaces
+names(df_foi) <- c("PropertyPostcode", "NumberOfProperties")
+
+# make id column from row number
+df_foi <- tibble::rowid_to_column(df_foi, "ID")
+
+# make pc8 as uppercase version of original - name to match var in pcode lookup
+df_foi <- mutate(df_foi, 
+                 pc8 = toupper(PropertyPostcode))
+       
+# this shows that first two letters in pc8 are always EH
+table(str_sub(df_foi$pc8, 1, 2))
+
+# this shows that length of pc8 mostly 7 or 8, but one 9
+table(str_length(df_foi$pc8))
+
+# identify the case - "EH16 4 FE"
+subset(df_foi, str_length(pc8) > 8)
+
+# change that case
+df_foi$pc8[df_foi$pc8 == "EH16 4 FE"] <- "EH16 4FE"
+
+# check that it is fixed
+table(str_length(df_foi$pc8))
+
+# quick check on final state of df_foi
+head(df_foi)
+
+```
+
+In total, there are `r nrow(df_foi)` postcodes with registered properties and a total of `r sum(df_foi$NumberOfProperties)`. That represents an average of `r sum(df_foi$NumberOfProperties)/nrows(df_foi)' properties per postcode. 
+
+
+
+## Postcode lookup file
+We read in the postcode to higher area lookup file, cut this down to "EH" postcodes and to the 11 variables we are interested in. 
+
+
+```{r get pcode lookup}
+
+# open postcode directory - gives some errors which we ignore for now
+df_pcode <- read_csv(
+  "data/Scottish_Postcode_Directory_2017_2.csv",
+  col_types = cols(
+      pc7 = col_character(),
+      pc8 = col_character(),
+      Grid_Reference_Easting = col_double(),
+      Grid_Reference_Northing = col_double(),
+      Latitude = col_double(),
+      Longitude = col_double(),
+      DataZone2011 = col_character(),
+      HHC2011 = col_double(),
+      Pop2011 = col_double(),
+      HHC2001 = col_double(),
+      Pop2001 = col_double()
+  )
+)
+# head(df_pcode)
+
+
+# one cut down of pcodes to those starting EH and only the vars we need
+df_pcode2 <- subset(df_pcode, str_sub(pc7, 1, 2) == "EH",
+                   select = c(pc7, pc8, DataZone2011, LAU_Level1_2011
+                   )
+)
+
+# second cut down of pcodes to just those in Edinburgh
+df_pcode3 <- subset(df_pcode, LAU_Level1_2011 == "S30000008",
+                   select = c(DataZone2011
+                   )
+)
+
+# collapse so it is just the list of DZs in Edinburgh
+df_dz_Edin <- df_pcode3 %>%
+  group_by(DataZone2011) %>%
+  summarise()
+# extract as list
+dz_Edin <- (df_dz_Edin$DataZone2011)
+
+```
+
+There are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011. 
+
+
+## Aggregate FoI data to Datazone
+We use the postcode lookup file to attach 2011 Datazone identifiers to the FOI data, along with information on the population of the postcode sector. 
+
+
+```{r aggregate to DZ}
+
+# left-join data from df_pcode to df_foi
+df_foi <- df_foi %>%
+  left_join(df_pcode2, by = "pc8")
+head(df_foi)
+
+# check how many cases have missing values - for pc7 it is 18 
+sum(is.na(df_foi$pc7))
+
+# check number of rows and valid cases in all cols
+# there is some drop off in HHC and Pop figs, esp. for 2001
+nrow(df_foi)
+colSums(!is.na(df_foi))
+
+```
+
+Number of cases: `r nrow(df_foi)`
+Pcode lookup failed: `r sum(is.na(df_foi$pc7))`
+
+
+# 
+
+
+
+```{r FOI data by DZ}
+
+# aggregating data to DZ level, summing number of registered props
+df_foi_dz <- df_foi %>%
+  group_by(DataZone2011) %>%
+  summarise(
+    NumberOfProperties = sum(NumberOfProperties, na.rm = TRUE)
+    )
+
+```
+
+
+## Census data on Datazones
+
+
+```{r census data for DZs}
+
+# Open file with tenure composition for DZs in 2011
+df_census <- as_tibble(read_csv("data/tenure DZ2011.csv"))
+
+# make correct PRS and PRSPct figures
+df_census <- mutate(df_census, 
+                    PRS = PrtRent_2011, 
+                    PRSPct = PrtRent_2011/All_HH_2011)
+
+# reduce to DZs in Edinburgh (dz_Edin)
+df_census <- df_census[df_census$DataZone %in% dz_Edin,]
+
+# rename 'Datazone' as 'Datazone2011'
+colnames(df_census)[1] <- "DataZone2011"
+```
+
+
+Now we merge tenure and landlord register data on to the Edinburgh Datazones file. 
+
+```{r xx}
+
+df_dz_Edin <- df_dz_Edin %>%
+  left_join(df_census, by = "DataZone2011")
+  
+df_dz_Edin <- df_dz_Edin %>%
+  left_join(df_foi_dz, by = "DataZone2011")
+
+# check number of DZ and number with registered properties
+nrow(df_dz_Edin)
+sum(is.na(df_dz_Edin$NumberOfProperties))
+
+# where reg props missing, set to zero
+df_dz_Edin$NumberOfProperties[
+  is.na(df_dz_Edin$NumberOfProperties)
+  ] <- 0
+
+```
+
+
+
+
+```{r graphs}
+# make text for correlation
+x <- signif(
+  cor(df_dz_Edin$PRS, df_dz_Edin$NumberOfProperties), 
+  digits = 2)
+corr_text <- paste("R =", x)
+
+ggplot(data = df_dz_Edin, 
+       mapping = aes(x = PRS, y = NumberOfProperties)) +
+  geom_point() +
+  geom_smooth(method = 'lm') + 
+  ggtitle("Registered properties vs PRS households - Edinburgh") +
+  xlab("PRS households in 2011 (Census)") +
+  ylab("No. of registered properties in 201x") +
+  geom_text(x = 25, y = 450,
+            label = corr_text)
+
+
+
+```
+
+
+
+```{r xx1}
+
+```
+
+
+
+```{r xx2}
+
+```
+
+
