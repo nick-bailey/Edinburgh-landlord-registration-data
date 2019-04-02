@@ -1,11 +1,16 @@
 ---
-title: "Data note: Edinburgh landlord register data analysis"
+title: 'Data note: Edinburgh landlord register data analysis'
 author: "Mark Livingston and Nick Bailey"
 date: "April 2019"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+# global options for knit
+knitr::opts_chunk$set(fig.width=8, fig.height=6, fig.path='Figs/',
+                      echo=FALSE, include=FALSE, warning=FALSE, message=FALSE)
 
 # install packages - first time only
 # packs <- c("tidyverse", "dplyr", "readxl")
@@ -18,6 +23,7 @@ library(readxl)
 
 ```
 
+<br><br>
 
 # Introduction
 
@@ -25,21 +31,24 @@ Data were obtained from City of Edinburgh Council's register of private landlord
 
 Similar Data Notes have been produced with extracts from the landlord registers for Aberdeen and Renfrewshire councils. 
 
+<br><br>
 
 # Census and survey data on the PRS in Edinburgh
 
 Some data on the PRS in Edinburgh is available from the Census and from household surveys. The Census is now somewhat out of date while the latter can only provide reliable estimates at local authority level. 
 
-At the 2011 Census, there where 224,240 households in Edinburgh, of which 49,980 (22.3%) were in the private rented sector(PRS). We can estimate changes since then using the Scottish Survey Core Questions (SSCQ) for 2012-16 (Figure 1). This shows a rise households number and in private renting, although the latter appears to have peaked in 2014. In 2016, there were an estimated 232,900 households in the city - an increase of 3.9% from 2011. The number of households in private renting rose to a peak of nearly 70,000 in 2014 but fell in subsequent years to 63,920 in 2016 (27.4%). That figure is still 28% higher than the Census estimate. 
+At the 2011 Census, there where 224,240 households in Edinburgh, of which 49,980 (22.3%) were in the private rented sector(PRS). We can estimate changes since then using the Scottish Survey Core Questions (SSCQ) for 2012-16 (Figure 1). This shows a rise households number and in private renting, although the latter appears to have peaked in 2014. In 2016, there were an estimated 232,900 households in the city - an increase of 3.9% from 2011. The number of households in private renting rose to a peak of nearly 70,000 in 2014 but fell in subsequent years to 63,920 in 2016 (27.4%). That figure is still 28% higher than the Census estimate. <br><br>
 
 
-![Figure 1: Private renting in Edinburgh - SSCQ 2012-16](maps/PRS_SSCQ.png)
+#### Figure 1: Private renting in Edinburgh - SSCQ 2012-16
+![](maps/PRS_SSCQ.png)
 
 [Mark - can we update to 2017? number and % PRS in 2012 (assuming 2011 not available) and number/% in 2017. And include 2011 Census estimate?]
 
+<br><br>
 
 # Landlord register dataset
-```{r get FOI data, include=FALSE}
+```{r get FOI data}
 # open csv file from FoI request
 df_foi <- as_tibble(read_excel("data/16177 Response Data.xlsx"))
 
@@ -77,17 +86,33 @@ Data were provided as a .csv file, listing each unit postcode containing any reg
 
 Various checks were carried out on the postcodes. All begin with "EH" as expected. All but one has the expected 7 or 8 characters. The exception had 9 characters due to an additional space so is easily corrected. However, it is surprising that the system does not seem to check and prevent an obviously invalid postcode from being entered. 
 
-In total, there are `r nrow(df_foi)` postcodes with registered properties and they contain a total of `r format(sum(df_foi$NumberOfProperties), digits=4, scientific=FALSE)` properties. That represents an average of `r signif(sum(df_foi$NumberOfProperties)/nrow(df_foi), digits=2)` properties per postcode. 
-
-The number of registered properties is `r signif(100 * sum(df_foi$NumberOfProperties)/63920, 3)`% of the estimated total for Edinburgh (using the SSCQ figure from 2016). At best, there appear to be `r format(100 - (100 * sum(df_foi$NumberOfProperties)/63920), digits=3, scientific=FALSE)`% of properties not listed (around `r signif(63920 - sum(df_foi$NumberOfProperties), digits=4)` properties). That figure is almost certainly an underestimate since properties can be listed but not let. Nevertheless, it suggests a very high coverage overall. 
+In total, there are `r nrow(df_foi)` postcodes with registered properties and they contain a total of `r format(sum(df_foi$NumberOfProperties), digits=4, scientific=FALSE)` properties. That represents an average of `r signif(sum(df_foi$NumberOfProperties)/nrow(df_foi), digits=2)` properties per postcode. The maximum number is `r max(df_foi$NumberOfProperties)`. Figure 2 shows the distribution with very few unit postcodes having more than about 30 registered properties. Note that postcodes with no properties are omitted.  <br><br>
 
 
-# Comparison landlord register with Census data at Datazone level
+
+```{r histogram FOI data, include=TRUE}
+# histogram of No. or Reg Props
+ggplot(data = df_foi, 
+       mapping = aes(x = NumberOfProperties)) +
+  geom_histogram() +
+  ggtitle("Figure 2: Number of registered properties per postcode - Edinburgh") +
+  theme(plot.title = element_text(size = 14, face = "plain")) +
+  xlab("Number of Registered Properties in Postcode") +
+  ylab("Number of Postcodes")
+```
+
+
+
+The number of registered properties is `r signif(100 * sum(df_foi$NumberOfProperties)/63920, 3)`% of the estimated total for Edinburgh (using the SSCQ figure from 2016). At best, there appear to be `r format(100 - (100 * sum(df_foi$NumberOfProperties)/63920), digits=3, scientific=FALSE)`% of properties not listed (around `r signif(63920 - sum(df_foi$NumberOfProperties), digits=4)` properties). That figure is almost certainly an underestimate since properties can be listed but not let. Nevertheless, it suggests a very high coverage overall. <br><br>
+
+# Comparison of landlord register with Census
 
 The great advantage of the landlord register data is that it provides detail down to the small area level. Here we aggregate data from unit postcodes to Datazones, and then use these to compare with Census data for the same units. 
 
-We do not expect a perfect fit between these data for two reasons. The first is the difference in timing of around six years). The second is that 
-```{r get pcode lookup, include=FALSE}
+We do not expect a perfect fit between these data for two reasons. The first is the difference in timing of around six years) during which time the sector will have grown faster in some locations than others. The second is that we do not expect all rented properties to be registered, nor all registered properties to be rented. Nevertheless, given the high ratio of registered properties to households in the PRS, we would expecta strong the relationship between the two. 
+
+
+```{r get pcode lookup}
 
 # open postcode directory - gives some errors which we ignore for now
 # NB that to fit onto GitHub, have had to cut down to EH pcodes only but left
@@ -168,10 +193,8 @@ df_dz_Edin$NumberOfProperties[
   is.na(df_dz_Edin$NumberOfProperties)
   ] <- 0
 ```
-To aggregate unit postcodes to Datazones, we use a lookup file. In this process, the lookup failed in `r sum(is.na(df_foi$pc7))` cases - a very small fraction. 
-
-There are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011 and `r nrow(df_foi_dz)` of these have registered landlords in 2017. 
-```{r correlation, echo=FALSE}
+To aggregate unit postcodes to Datazones, we use a lookup file. In this process, the lookup failed in `r sum(is.na(df_foi$pc7))` cases - a very small fraction. There are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011 and `r nrow(df_foi_dz)` of these have registered landlords in 2017. 
+```{r correlation}
 # make text for correlation
 corr <- signif(
   cor(df_dz_Edin$PRS, df_dz_Edin$NumberOfProperties), 
@@ -180,12 +203,11 @@ corr_text <- paste("R =", corr)
 ```
 
 
-A scatterplot shows the relationship between the number of properties in the PRS according to the Census 2011 and the number of registered properties in 2017 (Figure 2). Overall, the correlation is very high (`r corr_text`). 
-
-The solid line is the line of equality while the dashed line shows the exected number of registered properties in each case (given the number of registered properties compared with the number recorded by the Census). There are a few points some way below the line but more some way above it, suggesting that these are locations where private renting has been growing most strongly. 
+A scatterplot shows the relationship between the number of properties in the PRS according to the Census 2011 and the number of registered properties in 2017 (Figure 3). Overall, the correlation is very high (`r corr_text`). The solid line is the line of equality while the dashed line shows the exected number of registered properties in each case (given the number of registered properties compared with the number recorded by the Census). There are a few points some way below the line but more some way above it, suggesting that these are locations where private renting has been growing most strongly.  <br><br>
 
 
-```{r graphs, echo=FALSE}
+
+```{r graphs, include=TRUE}
 
 # 'expected' line given number of llord register (sum(df_foi$NumberOfProperties))
 # and number at Census (49980)
@@ -194,9 +216,10 @@ expected_slope <- sum(df_foi$NumberOfProperties)/49980
 ggplot(data = df_dz_Edin, 
        mapping = aes(x = PRS, y = NumberOfProperties)) +
   geom_point() +
-  ggtitle("Figure 2: Registered properties in 2017 vs PRS households in 2011 - Edinburgh") +
+  ggtitle("Figure 3: Registered properties in 2017 vs PRS households in 2011 - Edinburgh") +
   xlab("PRS households in 2011 (Census)") +
   ylab("No. of registered properties in 2017") +
+  theme(plot.title = element_text(size = 14, face = "plain")) +
   geom_abline(slope=1) +
   geom_abline(slope=expected_slope, linetype = "dashed") +
   geom_text(x = 25, y = 450,
@@ -205,14 +228,12 @@ ggplot(data = df_dz_Edin,
 ```
 
 
-We can get more insights by mapping the PRS at is was in 2011 (Figure 3) and comparing with the change 2011-17 (Figure 4). 
+We can get more insights by mapping the PRS at is was in 2011 (Figure 4) and comparing with the change 2011-17 (Figure 5). Figure 4 confirms the high concentration of the sector in the older inner areas where it ranged between 46% and 76%. There were also relatively high concentrations in a number of suburban locations to the west and south east of the city.The fastest growing areas tend to be just around the central core, in the locations where the PRS was not quite at such a high level in 2011. There was also faster growth in some of the suburban locations to the west of the city. <br><br>
 
-Figure 3 confirms the high concentration of the sector in the older inner areas. 
+#### Figure 4: Households in PRS - 2011
+![](maps/Census_pct.png) 
+<br>
 
-
-![Figure 3: Households in PRS - 2011](maps/Census_pct.png) 
-
-![Figure 4: Percentage change in households in PRS - 2011-17](maps/Change_pct.png)
-
-
+#### Figure 5: Percentage change in households in PRS - 2011-17
+![](maps/Change_pct.png)
 
