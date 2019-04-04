@@ -1,5 +1,0 @@
-"0","# make text for correlation"
-"0","corr <- signif("
-"0","  cor(df_dz_Edin$PRS, df_dz_Edin$NumberOfProperties), "
-"0","  digits = 2)"
-"0","corr_text <- paste(""R ="", corr)"
