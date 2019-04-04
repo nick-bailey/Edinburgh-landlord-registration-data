@@ -41,7 +41,7 @@ At the 2011 Census, there where 224,240 households in Edinburgh, of which 49,980
 #### Figure 1: Private renting in Edinburgh - SSCQ 2012-16
 ![](maps/PRS_SSCQ.png)
 
-[Mark - can we update to 2017? number and % PRS in 2012 (assuming 2011 not available) and number/% in 2017. And include 2011 Census estimate?]
+
 
 <br><br>
 
@@ -107,7 +107,7 @@ The number of registered properties is `r signif(100 * sum(df_foi$NumberOfProper
 
 The great advantage of the landlord register data is that it provides detail down to the small area level. Here we aggregate data from unit postcodes to Datazones, and then use these to compare with Census data for the same units. 
 
-We do not expect a perfect fit between these data for two reasons. The first is the difference in timing of around six years) during which time the sector will have grown faster in some locations than others. The second is that we do not expect all rented properties to be registered, nor all registered properties to be rented. Nevertheless, given the high ratio of registered properties to households in the PRS, we would expecta strong the relationship between the two. 
+We do not expect a perfect fit between these data for two reasons. The first is the difference in timing of around six years) during which time the sector will have grown faster in some locations than others. The second is that we do not expect all rented properties to be registered, nor all registered properties to be rented. Nevertheless, given the high ratio of registered properties to households in the PRS, we would expect a strong the relationship between the two.   
 
 
 ```{r get pcode lookup}
@@ -192,6 +192,7 @@ df_dz_Edin$NumberOfProperties[
   ] <- 0
 ```
 To aggregate unit postcodes to Datazones, we use a lookup file. In this process, the lookup failed in `r sum(is.na(df_foi$pc7))` cases - a very small fraction. There are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011 and `r nrow(df_foi_dz)` of these have registered landlords in 2017. 
+[Nick the numbers coming out doesn't make sense, i.e. there are less datazones in Edinburgh than there are datazones with registered landlords?]
 ```{r correlation}
 # make text for correlation
 corr <- signif(
@@ -228,7 +229,7 @@ ggplot(data = df_dz_Edin,
 
 We can get more insights by mapping the PRS at is was in 2011 (Figure 4) and comparing with the change 2011-17 (Figure 5). Figure 4 confirms the high concentration of the sector in the older inner areas where it ranged between 46% and 76%. There were also relatively high concentrations in a number of suburban locations to the west and south east of the city.The fastest growing areas tend to be just around the central core, in the locations where the PRS was not quite at such a high level in 2011. There was also faster growth in some of the suburban locations to the west of the city. <br><br>
 
-#### Figure 4: Households in PRS - 2011
+#### Figure 4: Households in PRS - 2011 census
 ![](maps/Census_pct.png) 
 <br>
 
