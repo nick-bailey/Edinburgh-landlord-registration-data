@@ -27,15 +27,17 @@ library(readxl)
 
 # Introduction
 
-Data were obtained from City of Edinburgh Council's register of private landlords. Data were obtained under a Freedom of Information (FoI) request in December 2017. (The request was made on 07/09/2017 - request number 16177). These data provide the number of listed properties within each unit postcode in the city at that time, i.e. they are an aggregated, anonymised extract from the database. In this note, we explore how these data can be used to provide a picture of private renting in the city. 
+In this note, we examine a dataset obtained from the City of Edinburgh's private landlord registration system. We explore the potential value of these data by comparing them with other data sources on private renting in the city. We also examine what they tell us about the implementation of the landlord registration scheme. 
 
-Similar Data Notes have been produced with extracts from the landlord registers for Aberdeen and Renfrewshire councils. <br><br>
+Data were obtained from City of Edinburgh Council's register of private landlords under a Freedom of Information (FoI) request in December 2017. The request was made on 07/09/2017 - request number 16177. It was initially rejected by the Council but accepted after an appeal. The legislation which created the statutory landlord registration system (the Anti-Social Behaviour (Scotland) Act 2004) explicitly prevents local authorities from publishing the entire contents of the register. This causes some authorities to believe that they are not permitted to share any part of the data contained in the register or to publish summary information or statistics from it. However, as we have argued in pursuing access to these data under FoI, publishing aggregated, anonymised extracts from the database is not probited by the legislation.
+
+Similar Data Notes have been produced with extracts from the landlord registers for [Aberdeen](https://www.ubdc.ac.uk/media/1518/data-note-22017-landlord-register-aberdeen.pdf) and [Renfrewshire](https://www.ubdc.ac.uk/media/1421/data_note_prs_in_renfrew.pdf) councils. <br><br>
 
 # Census and survey data on the PRS in Edinburgh
 
-Some data on the PRS in Edinburgh is available from the Census and from household surveys. The Census is now somewhat out of date while the latter can only provide reliable estimates at local authority level. 
+Some data on the PRS in Edinburgh are available from the Census and from household surveys. The Census can provide detail for small areas or neighbourhoods but is now somewhat out of date while the surveys can only provide reliable estimates at local authority level. 
 
-At the 2011 Census, there where 224,240 households in Edinburgh, of which 49,980 (22.3%) were in the private rented sector(PRS). We can estimate changes since then using the Scottish Survey Core Questions (SSCQ) for 2012-16 (Figure 1). This shows a rise households number and in private renting, although the latter appears to have peaked in 2014. In 2016, there were an estimated 232,900 households in the city - an increase of 3.9% from 2011. The number of households in private renting rose to a peak of nearly 70,000 in 2014 but fell in subsequent years to 63,920 in 2016 (27.4%). That figure is still 28% higher than the Census estimate. <br><br>
+At the 2011 Census, there where 224,240 households in Edinburgh, of which 49,980 (22.3%) were in the private rented sector (PRS). We can estimate changes since then using the Scottish Survey Core Questions (SSCQ) for 2012-16 (Figure 1). This shows a rise households number and in private renting, although the latter appears to have peaked in 2014. In 2016, there were an estimated 232,900 households in the city - an increase of 3.9% from 2011. The number of households in private renting rose to a peak of nearly 70,000 in 2014 but fell in subsequent years to 63,920 in 2016 (27.4%). That figure is still 28% higher than the Census estimate. <br><br>
 
 
 #### Figure 1: Private renting in Edinburgh - SSCQ 2012-16
@@ -80,7 +82,7 @@ head(df_foi)
 
 ```
 
-Data were provided as a .csv file, listing each unit postcode containing any registered properties and the number of registered properties. It should be noted that, where a property is owned by two or more individuals, each is required to register separately. In this dataset, duplicate listings for the same property have been combined. (This is different to the treatment in the Aberdeen note where the data were provided as the number of listings. The Renfrewshire note gives some insights into the difference which results.) 
+Data from the landlord register were provided as a .csv file, listing each unit postcode containing any registered properties and the number of registered properties. It should be noted that, where a property is owned by two or more individuals, each person is required to register separately. In this dataset, however, duplicate listings for the same property have been combined. This is different to the treatment in the Aberdeen note where the data were provided as the number of listings in each postcode. The Renfrewshire dataset was different again as it contained all listings but also an anonymous identifier which let us see where there were multiple listings for a property. The Renfrewshire data note therefore gives some insights into the differences which result. 
 
 Various checks were carried out on the postcodes. All begin with "EH" as expected. All but one has the expected 7 or 8 characters. The exception had 9 characters due to an additional space so is easily corrected. However, it is surprising that the system does not seem to check and prevent an obviously invalid postcode from being entered. 
 
@@ -101,13 +103,13 @@ ggplot(data = df_foi,
 
 
 
-The number of registered properties is `r signif(100 * sum(df_foi$NumberOfProperties)/63920, 3)`% of the estimated total for Edinburgh (using the SSCQ figure from 2016). At best, there appear to be `r format(100 - (100 * sum(df_foi$NumberOfProperties)/63920), digits=3, scientific=FALSE)`% of properties not listed (around `r signif(63920 - sum(df_foi$NumberOfProperties), digits=4)` properties). That figure is almost certainly an underestimate since properties can be listed but not let. Nevertheless, it suggests a very high coverage overall. <br><br>
+The number of registered properties is `r signif(100 * sum(df_foi$NumberOfProperties)/63920, 3)`% of the estimated total for Edinburgh (using the SSCQ figure from 2016). As a first estimate, there appear to be `r format(100 - (100 * sum(df_foi$NumberOfProperties)/63920), digits=3, scientific=FALSE)`% of properties not listed (around `r signif(63920 - sum(df_foi$NumberOfProperties), digits=4)` properties). If private renting in Edinburgh continued to fall in 2017, the registration rate would be higher. On the other hand, this figure may also be an underestimate since properties can be listed but not let. Nevertheless, it suggests a very high coverage overall. <br><br>
 
 # Comparison of landlord register with Census
 
 The great advantage of the landlord register data is that it provides detail down to the small area level. Here we aggregate data from unit postcodes to Datazones, and then use these to compare with Census data for the same units. 
 
-We do not expect a perfect fit between these data for two reasons. The first is the difference in timing of around six years) during which time the sector will have grown faster in some locations than others. The second is that we do not expect all rented properties to be registered, nor all registered properties to be rented. Nevertheless, given the high ratio of registered properties to households in the PRS, we would expect a strong the relationship between the two.   
+We do not expect a perfect fit between these data for two reasons. The first is the obvious difference in timing of around six years during which time the sector will have grown faster in some locations than others. The second is that we do not expect all rented properties to be registered, nor all registered properties to be rented as noted in the previous section. Nevertheless, given the apparently high rate of registration, we would expect a strong the relationship between the two.   
 
 
 ```{r get pcode lookup}
@@ -142,6 +144,9 @@ df_foi <- df_foi %>%
   left_join(df_pcode2, by = "pc8")
 # check how many cases have missing values - for pc7 it is 18 
 sum(is.na(df_foi$pc7))
+# check how many properties this affects - 27
+sum(df_foi$NumberOfProperties[is.na(df_foi$DataZone2011)])
+
 # check number of rows and valid cases in all cols
 # NB there is some drop off in HHC and Pop figs, esp. for 2001
 nrow(df_foi)
@@ -152,6 +157,11 @@ df_foi_dz <- df_foi %>%
   summarise(
     NumberOfProperties = sum(NumberOfProperties, na.rm = TRUE)
     )
+nrow(df_foi_dz)
+# number of properties with missing DZ
+sum(df_foi_dz$NumberOfProperties[
+  is.na(df_foi_dz$DataZone2011)
+  ])
 
 # second cut of df_pcode to those in Edinburgh in order to make list of DZs in city 
 df_pcode3 <- subset(df_pcode, LAU_Level1_2011 == "S30000008",
@@ -190,9 +200,25 @@ sum(is.na(df_dz_Edin$NumberOfProperties))
 df_dz_Edin$NumberOfProperties[
   is.na(df_dz_Edin$NumberOfProperties)
   ] <- 0
+
+# df_foi_dz has 601 rows but there are only 597 DZ in Edin
+# one is na and there are four which appear to be outside Edinburgh
+df_dz_check <- df_foi_dz %>%
+  left_join(df_dz_Edin, by = "DataZone2011")
+df_dz_check2 <- df_dz_check[is.na(df_dz_check$All_HH_2011), ]
+nrow(df_dz_check2)
+
 ```
-To aggregate unit postcodes to Datazones, we use a lookup file. In this process, the lookup failed in `r sum(is.na(df_foi$pc7))` cases - a very small fraction. There are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011 and `r nrow(df_foi_dz)` of these have registered landlords in 2017. 
-[Nick the numbers coming out doesn't make sense, i.e. there are less datazones in Edinburgh than there are datazones with registered landlords?]
+To aggregate unit postcodes to Datazones, we use a lookup file. In this process, the lookup failed in just `r sum(is.na(df_foi$pc7))` cases - a very small fraction. These cases contained `r sum(df_foi$NumberOfProperties[is.na(df_foi$DataZone2011)])` properties. 
+
+There are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011. 
+
+There are `r sum(df_foi_dz$NumberOfProperties[is.na(df_foi_dz$DataZone2011)])` cases on the FOI dataset where the Datazone is missing. 
+
+
+In the FOI data, there appear and `r nrow(df_foi_dz)` of these have registered landlords in 2017. 
+
+
 ```{r correlation}
 # make text for correlation
 corr <- signif(
