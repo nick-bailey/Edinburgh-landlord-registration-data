@@ -3,8 +3,8 @@ title: 'Data note: Edinburgh landlord register data analysis'
 author: "Mark Livingston and Nick Bailey"
 date: "April 2019"
 output:
-  word_document: default
   html_document: default
+  word_document: default
 ---
 ```{r setup, include=FALSE}
 
@@ -27,9 +27,9 @@ library(readxl)
 
 # Introduction
 
-In this note, we examine a dataset obtained from the City of Edinburgh's private landlord registration system. We explore the potential value of these data by comparing them with other data sources on private renting in the city. We also examine what they tell us about the implementation of the landlord registration scheme. 
+In this note, we examine a dataset obtained from the City of Edinburgh's private landlord registration system. We explore the potential value of these data by comparing them with other data sources on private renting in the city. We also comment on what they tell us about the implementation of the landlord registration scheme. 
 
-Data were obtained from City of Edinburgh Council's register of private landlords under a Freedom of Information (FoI) request in December 2017. The request was made on 07/09/2017 - request number 16177. It was initially rejected by the Council but accepted after an appeal. The legislation which created the statutory landlord registration system (the Anti-Social Behaviour (Scotland) Act 2004) explicitly prevents local authorities from publishing the entire contents of the register. This causes some authorities to believe that they are not permitted to share any part of the data contained in the register or to publish summary information or statistics from it. However, as we have argued in pursuing access to these data under FoI, publishing aggregated, anonymised extracts from the database is not probited by the legislation.
+Data were obtained from City of Edinburgh Council's register of private landlords under a Freedom of Information (FoI) request in December 2017. The request was made on 07/09/2017 - request number 16177. It was initially rejected by the Council but accepted after an appeal. The legislation which created the statutory landlord registration system (the Anti-Social Behaviour (Scotland) Act 2004) explicitly prevents local authorities from publishing the entire contents of the register. This causes some authorities to believe that they are not permitted to share any part of the data contained in the register or to publish summary information or statistics from it. However, as we have argued in pursuing access to these data under FoI, publishing aggregated, anonymised extracts from the database is not probited by the legislation. Indeed, the *explicit* ban on full publication can be seen as an *implicit* recognition that partial or summary information can be published. 
 
 Similar Data Notes have been produced with extracts from the landlord registers for [Aberdeen](https://www.ubdc.ac.uk/media/1518/data-note-22017-landlord-register-aberdeen.pdf) and [Renfrewshire](https://www.ubdc.ac.uk/media/1421/data_note_prs_in_renfrew.pdf) councils. <br><br>
 
@@ -82,11 +82,11 @@ head(df_foi)
 
 ```
 
-Data from the landlord register were provided as a .csv file, listing each unit postcode containing any registered properties and the number of registered properties. It should be noted that, where a property is owned by two or more individuals, each person is required to register separately. In this dataset, however, duplicate listings for the same property have been combined. This is different to the treatment in the Aberdeen note where the data were provided as the number of listings in each postcode. The Renfrewshire dataset was different again as it contained all listings but also an anonymous identifier which let us see where there were multiple listings for a property. The Renfrewshire data note therefore gives some insights into the differences which result. 
+Data from the landlord register were provided as a .csv file, listing each unit postcode containing any registered properties and the number of registered properties in each. It should be noted that, where a property is owned by two or more individuals, each person is required to register separately. In this dataset, however, duplicate listings for the same property have been combined. This is different to the treatment in the Aberdeen data note where the data were provided as the number of listings in each postcode. The Renfrewshire dataset was different again as it contained all listings but also an anonymous identifier which let us see where there were multiple listings for a property. The Renfrewshire data note therefore gives some insights into the differences which result. 
 
-Various checks were carried out on the postcodes. All begin with "EH" as expected. All but one has the expected 7 or 8 characters. The exception had 9 characters due to an additional space so is easily corrected. However, it is surprising that the system does not seem to check and prevent an obviously invalid postcode from being entered. 
+Various initial checks were carried out on the postcodes. All begin with "EH" as expected. All but one has the expected 7 or 8 characters. The exception had 9 characters including two spaces. We chose to assume that this could be corrected by removing the extra space. However, it is surprising that the system does not seem to check and prevent an obviously invalid postcode from being entered. 
 
-In total, there are `r nrow(df_foi)` postcodes with registered properties and they contain a total of `r format(sum(df_foi$NumberOfProperties), digits=4, scientific=FALSE)` properties. That represents an average of `r signif(sum(df_foi$NumberOfProperties)/nrow(df_foi), digits=2)` properties per postcode. The maximum number is `r max(df_foi$NumberOfProperties)`. Figure 2 shows the distribution with very few unit postcodes having more than about 30 registered properties. Note that postcodes with no properties are omitted.  <br><br>
+In total, there are `r nrow(df_foi)` postcodes with registered properties and they contain a total of `r sum(df_foi$NumberOfProperties)` properties. That represents an average of `r signif(sum(df_foi$NumberOfProperties)/nrow(df_foi), digits=2)` properties per postcode. The maximum number is `r max(df_foi$NumberOfProperties)`. Figure 2 shows the distribution with very few unit postcodes having more than about 30 registered properties. Note that postcodes with no properties are omitted.  <br><br>
 
 
 
@@ -103,13 +103,13 @@ ggplot(data = df_foi,
 
 
 
-The number of registered properties is `r signif(100 * sum(df_foi$NumberOfProperties)/63920, 3)`% of the estimated total for Edinburgh (using the SSCQ figure from 2016). As a first estimate, there appear to be `r format(100 - (100 * sum(df_foi$NumberOfProperties)/63920), digits=3, scientific=FALSE)`% of properties not listed (around `r signif(63920 - sum(df_foi$NumberOfProperties), digits=4)` properties). If private renting in Edinburgh continued to fall in 2017, the registration rate would be higher. On the other hand, this figure may also be an underestimate since properties can be listed but not let. Nevertheless, it suggests a very high coverage overall. <br><br>
+The number of registered properties is `r signif(100 * sum(df_foi$NumberOfProperties)/63920, 3)`% of the estimated total for Edinburgh (using the SSCQ figure from 2016). As a first estimate, there appear to be `r format(100 - (100 * sum(df_foi$NumberOfProperties)/63920), digits=3, scientific=FALSE)`% of properties not listed (around `r signif(63920 - sum(df_foi$NumberOfProperties), digits=4)` properties). If private renting in Edinburgh continued to fall in 2017 in line with the previous years, the registration rate would be slightly higher. On the other hand, this estimate of the registration rate may also be an overestimate since properties can be listed but not let (i.e. there may be more let properties not registered). Nevertheless, it suggests a very high coverage overall. <br><br>
 
 # Comparison of landlord register with Census
 
 The great advantage of the landlord register data is that it provides detail down to the small area level. Here we aggregate data from unit postcodes to Datazones, and then use these to compare with Census data for the same units. 
 
-We do not expect a perfect fit between these data for two reasons. The first is the obvious difference in timing of around six years during which time the sector will have grown faster in some locations than others. The second is that we do not expect all rented properties to be registered, nor all registered properties to be rented as noted in the previous section. Nevertheless, given the apparently high rate of registration, we would expect a strong the relationship between the two.   
+We do not expect a perfect fit between these data for two reasons. The first is the obvious difference in timing of around six years during which time the sector will have grown faster in some locations than others. The second is that we know that not all rented properties are registered, nor are all registered properties be rented as noted in the previous section. Nevertheless, given the apparently high rate of registration, we would expect a strong the relationship between the two.   
 
 
 ```{r get pcode lookup}
@@ -158,6 +158,7 @@ df_foi_dz <- df_foi %>%
     NumberOfProperties = sum(NumberOfProperties, na.rm = TRUE)
     )
 nrow(df_foi_dz)
+
 # number of properties with missing DZ
 sum(df_foi_dz$NumberOfProperties[
   is.na(df_foi_dz$DataZone2011)
@@ -186,14 +187,48 @@ df_census <- df_census[df_census$DataZone %in% dz_Edin,]
 # rename 'Datazone' as 'Datazone2011' for matching
 colnames(df_census)[1] <- "DataZone2011"
 
-# merge census tenure and foi data on to the Edinburgh Datazones file. 
+# merge census tenure data on to the Edinburgh Datazones file. 
 df_dz_Edin <- df_dz_Edin %>%
   left_join(df_census, by = "DataZone2011")
+# merge foi data - use full join
 df_dz_Edin <- df_dz_Edin %>%
-  left_join(df_foi_dz, by = "DataZone2011")
+  full_join(df_foi_dz, by = "DataZone2011")
 
 # check number of DZ and number with registered properties
 nrow(df_dz_Edin)
+
+# check number in DZ not in Edinburgh or missing DZ 
+sum(is.na(df_dz_Edin$All_HH_2011))
+# put cases outside Edin (or missing DZ) in sep df
+df_dz_NotEdin <- df_dz_Edin[
+  is.na(df_dz_Edin$All_HH_2011),
+  ]
+
+# number of properties lost
+sum(df_dz_NotEdin$NumberOfProperties)
+# proportion of original total
+sprintf("%.2f %%", 
+        100 * sum(df_dz_NotEdin$NumberOfProperties)/
+          sum(df_foi$NumberOfProperties))
+
+# number of properties lost - no DZ i.e. pcode match failed
+sum(df_dz_NotEdin$NumberOfProperties[
+  is.na(df_dz_NotEdin$DataZone2011)
+  ])
+# number of DZ with FOI data but not in Edin
+nrow(df_dz_NotEdin[
+  !is.na(df_dz_NotEdin$DataZone2011),])
+
+# number of properties lost - not in Edin i.e. others
+sum(df_dz_NotEdin$NumberOfProperties[
+  !is.na(df_dz_NotEdin$DataZone2011)
+  ])
+
+# remove cases outside Edin (or missing DZ) from df_dz_Edin
+df_dz_Edin <- df_dz_Edin[
+  !is.na(df_dz_Edin$All_HH_2011),]
+
+# check number of DZ in Edinb without registered properties
 sum(is.na(df_dz_Edin$NumberOfProperties))
 
 # where reg props missing for any DZ, set to zero
@@ -201,22 +236,33 @@ df_dz_Edin$NumberOfProperties[
   is.na(df_dz_Edin$NumberOfProperties)
   ] <- 0
 
-# df_foi_dz has 601 rows but there are only 597 DZ in Edin
-# one is na and there are four which appear to be outside Edinburgh
-df_dz_check <- df_foi_dz %>%
-  left_join(df_dz_Edin, by = "DataZone2011")
-df_dz_check2 <- df_dz_check[is.na(df_dz_check$All_HH_2011), ]
-nrow(df_dz_check2)
+# number of properties in final dataset
+sum(df_dz_Edin$NumberOfProperties)
+
+# DZs with no registered properties
+nrow(df_dz_Edin[df_dz_Edin$NumberOfProperties == 0,])
+
+# highest number of props in a DZ
+max(df_dz_Edin$NumberOfProperties)
+ 
 
 ```
-To aggregate unit postcodes to Datazones, we use a lookup file. In this process, the lookup failed in just `r sum(is.na(df_foi$pc7))` cases - a very small fraction. These cases contained `r sum(df_foi$NumberOfProperties[is.na(df_foi$DataZone2011)])` properties. 
+To aggregate unit postcodes to Datazones, we use a lookup file. In this process, the lookup failed in just `r sum(is.na(df_foi$pc7))` cases - a very small fraction. These cases contained `r sum(df_foi$NumberOfProperties[is.na(df_foi$DataZone2011)])` properties. However, there are also a number of cases where the FOI entry matches to a postcode which is in a Datazone outside Edinburgh. This happens in `r sum(df_dz_NotEdin$NumberOfProperties[!is.na(df_dz_NotEdin$DataZone2011)])` cases. 
 
-There are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011. 
+Hence, of the original total, `r sum(df_dz_NotEdin$NumberOfProperties)` registered properties are dropped. This represents just `r sprintf("%.2f %%", 100 * sum(df_dz_NotEdin$NumberOfProperties)/sum(df_foi$NumberOfProperties))` of the total. 
 
-There are `r sum(df_foi_dz$NumberOfProperties[is.na(df_foi_dz$DataZone2011)])` cases on the FOI dataset where the Datazone is missing. 
+In the final dataset, there are `r nrow(df_dz_Edin)` Datazones in Edinburgh in 2011. These contain `r format(sum(df_dz_Edin$NumberOfProperties), scientific = FALSE)` registered properties. The number of Datazones with no registered properties is just `r nrow(df_dz_Edin[df_dz_Edin$NumberOfProperties == 0,])`. Figure 3 shows the distribution of properties per Datazone. The highest number of registered properties in a Datazone is `r max(df_dz_Edin$NumberOfProperties)`. 
 
-
-In the FOI data, there appear and `r nrow(df_foi_dz)` of these have registered landlords in 2017. 
+```{r histogram DZ data, include=TRUE}
+# histogram of No. or Reg Props
+ggplot(data = df_dz_Edin, 
+       mapping = aes(x = NumberOfProperties)) +
+  geom_histogram() +
+  ggtitle("Figure 3: Number of registered properties per Datazone - Edinburgh") +
+  theme(plot.title = element_text(size = 14, face = "plain")) +
+  xlab("Number of Registered Properties in Datazone") +
+  ylab("Number of Datazones")
+```
 
 
 ```{r correlation}
@@ -225,23 +271,26 @@ corr <- signif(
   cor(df_dz_Edin$PRS, df_dz_Edin$NumberOfProperties), 
   digits = 2)
 corr_text <- paste("R =", corr)
+
+# num prs props at census
+sum(df_census$PRS)
 ```
 
 
-A scatterplot shows the relationship between the number of properties in the PRS according to the Census 2011 and the number of registered properties in 2017 (Figure 3). Overall, the correlation is very high (`r corr_text`). The solid line is the line of equality while the dashed line shows the exected number of registered properties in each case (given the number of registered properties compared with the number recorded by the Census). There are a few points some way below the line but more some way above it, suggesting that these are locations where private renting has been growing most strongly.  <br><br>
+A scatterplot shows the relationship between the number of properties in the PRS according to the Census 2011 and the number of registered properties in 2017 (Figure 4). Overall, the correlation is very high (`r corr_text`). The solid line is the line of equality while the dashed line shows the exected number of registered properties in each case (given the number of registered properties compared with the number recorded by the Census). There are a few points some way below the line but more some way above it, suggesting that these are locations where private renting has been growing most strongly.  <br><br>
 
 
 
 ```{r graphs, include=TRUE}
 
 # 'expected' line given number of llord register (sum(df_foi$NumberOfProperties))
-# and number at Census (49980)
-expected_slope <- sum(df_foi$NumberOfProperties)/49980
+# and number at Census 
+expected_slope <- sum(df_foi$NumberOfProperties)/sum(df_census$PRS)
 
 ggplot(data = df_dz_Edin, 
        mapping = aes(x = PRS, y = NumberOfProperties)) +
   geom_point() +
-  ggtitle("Figure 3: Registered properties in 2017 vs PRS households in 2011 - Edinburgh") +
+  ggtitle("Figure 4: Registered properties in 2017 vs PRS households in 2011 - Edinburgh") +
   xlab("PRS households in 2011 (Census)") +
   ylab("No. of registered properties in 2017") +
   theme(plot.title = element_text(size = 14, face = "plain")) +
@@ -253,12 +302,12 @@ ggplot(data = df_dz_Edin,
 ```
 
 
-We can get more insights by mapping the PRS at is was in 2011 (Figure 4) and comparing with the change 2011-17 (Figure 5). Figure 4 confirms the high concentration of the sector in the older inner areas where it ranged between 46% and 76%. There were also relatively high concentrations in a number of suburban locations to the west and south east of the city.The fastest growing areas tend to be just around the central core, in the locations where the PRS was not quite at such a high level in 2011. There was also faster growth in some of the suburban locations to the west of the city. <br><br>
+We can get more insights by mapping the PRS at is was in 2011 (Figure 4) and comparing with the change 2011-17 (Figure 6). Figure 5 confirms the high concentration of the sector in the older inner areas where it ranged between 46% and 76%. There were also relatively high concentrations in a number of suburban locations to the west and south east of the city.The fastest growing areas tend to be just around the central core, in the locations where the PRS was not quite at such a high level in 2011. There was also faster growth in some of the suburban locations to the west of the city. <br><br>
 
-#### Figure 4: Households in PRS - 2011 census
+#### Figure 5: Households in PRS - 2011 census
 ![](maps/Census_pct.png) 
 <br>
 
-#### Figure 5: Percentage change in households in PRS - 2011-17
+#### Figure 6: Percentage change in households in PRS - 2011-17
 ![](maps/Change_pct.png)
 
