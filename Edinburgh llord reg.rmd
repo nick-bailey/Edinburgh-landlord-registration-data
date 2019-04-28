@@ -3,8 +3,8 @@ title: 'Data note: Edinburgh landlord register data analysis'
 author: "Mark Livingston and Nick Bailey"
 date: "April 2019"
 output:
-  html_document: default
   word_document: default
+  html_document: default
 ---
 ```{r setup, include=FALSE}
 
@@ -311,3 +311,6 @@ We can get more insights by mapping the PRS at is was in 2011 (Figure 4) and com
 #### Figure 6: Percentage change in households in PRS - 2011-17
 ![](maps/Change_pct.png)
 
+
+## Access to data and code
+The landlord register datasets for Edinburgh and Aberdeen can be accessed from the UBDC data portal (http://ubdc.gla.ac.uk/dataset). The data and code used to produce this datanote can be access from Github at https://github.com/nick-bailey/Edinburgh-landlord-registration-data. 
